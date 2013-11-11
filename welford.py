@@ -1,5 +1,6 @@
 #All class variables are prefixed by a _, this to prevent them from being so eaisly modified by the programer without hopefully throwing some sort of flag. This is primarly because the programer should not need to change any values other than through a series of equations(aka the methods), but the options are available for easy access. 
 
+from __future__ import division
 
 class Welford:
 	def __init__(self, lag):
@@ -8,9 +9,9 @@ class Welford:
 		self._i = 0
 		self._debug = False #for debuging statements
 		self._lag = lag;
-		self._laggedData = [] #list used for holding lagged entries, for auto correlation
+		self._X = [] #list used for holding lagged entries, for auto correlation
 		for i in range(lag):
-			self._laggedData.append(None)
+			self._X.append(None)
 		self._lastAddedPoint = None #holds previous point for covariance
 		self._previousMean = None #holds previous mean for covariance
 
@@ -21,9 +22,10 @@ class Welford:
 		self._mean = 0.0
 		self._ivariance = 0.0
 		self._i = 0
-		self._laggedData = [] #list used for holding lagged entries, for auto correlation
+		self._X = [] #list used for holding lagged entries, for auto correlation
+		self._W = [] #list used for holding the autocorrelation lags.
 		for i in range(lag):
-			self._laggedData.append(None)
+			self._X.append(None)
 		self._lastAddedPoint = None #holds previous point for covariance
 		self._previousMean = None #holds previous mean for covariance
 
@@ -41,21 +43,21 @@ class Welford:
 
 		#update the last added point
 		self._lastAddedPoint = data
+	
+
+		if self._i > 1: #if there is a pair of correlation to calculate
+			if self._i < self._lag:
+				for j in range(0, i):
+					self._W[j] = self._W[j] + ((self._i-1)/self._1)*(self._lastAddedPoint - self._previousMean)(self._X[(self._i-j) %self._lag] -self._previousMean)
+			else:
+				for j in range(0, self._lag):
+					self._W[j] = self._W[j] + ((self._i-1)/self._1)*(self._lastAddedPoint - self._previousMean)(self._X[(self._i-j) %self._lag] -self._previousMean)
 		
 		#add data to laged list
-		self._laggedData[self._i%self._lag] = data
+		self._X[self._i%self._lag] = data
 
 		if self._debug:
 			print("Mean is now %f\niVariance is now %f\ni is now %i" % (self._mean, self._ivariance, self._i))
-
-	#returns the autocorrelation with k lag
-	def getAutoCorrelation(self):
-		if self._i < self._lag: #not enought data points to calculate auto correlation lag
-			print "Not enough data points to provide an autocorrelation with lag %i" % (self._lag)
-			return None
-		else:#autocorrelation can be calculated
-			sum = 0
-			startingPoint = ((self._i%self._lag+1) + 1)%self._lag #the starting point in circular array, ie if lag is 5 and there are 13 points, 3 was the last index added, so the oldest data is at 4
 		
 
 	#returns the variance, not the i*variance
@@ -118,39 +120,3 @@ class Welford:
 		print("Mean: %f\nvariance: %f\nNumber of points(i): %f" % (self._mean, self.getVariance(), self._i))
 		#method is self explanitory, shouldn't need to debug explain it.
 
-class WelfordCorrelation:
-	def __init__(self, Wu, Wv): #Wu and Wv are assumed to be welford objects.
-		self._maxLag = Wu.getLag() #set maxlag
-		self._Wu = Wu
-		self._Wv = Wv
-
-		self._W = []#intilize lists
-		self._X = []
-		if Wv.getLag() > self._magLag:
-			self._maxLag = Wv.getLag()
-		for i in range(0, self._maxLag):#preallocate space, so all overhead is done before runtime
-			self._W.append(None)
-			self._X.append(None)
-		self._debug = False #for debuging
-
-	def addDataBoth(self, data):
-		if self._debug:
-			print("Adding data to both welford objects")
-
-	def addData(self, data, welford):
-		if welford == self._Wu or welford == self._Wv:
-			if self._debug:
-				if welford == self._Wu:
-					print("Adding data to Wu welfrod object")
-				else:
-					print("Adding data to Wv welford object")
-		else:
-			print("ERROR: Trying to add data to a welford object not tied to this welford correlation")
-			return 
-	def setDebug(self, debug):
-		if self._debug:
-			print("Setting the debug flag to %b" % (debug))
-		self._debug = debug
-	
-	def getMaxLag(self):
-		return self._maxLag
