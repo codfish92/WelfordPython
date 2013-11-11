@@ -8,6 +8,11 @@ class Welford:
 		self._i = 0
 		self._debug = False #for debuging statements
 		self._lag = lag;
+		self._laggedData = [] #list used for holding lagged entries, for auto correlation
+		for i in range(lag):
+			self._laggedData.append(None)
+		self._lastAddedPoint = None #holds previous point for covariance
+		self._previousMean = None #holds previous mean for covariance
 
 	#reset this particular welford object
 	def reset(self):
@@ -16,17 +21,42 @@ class Welford:
 		self._mean = 0.0
 		self._ivariance = 0.0
 		self._i = 0
+		self._laggedData = [] #list used for holding lagged entries, for auto correlation
+		for i in range(lag):
+			self._laggedData.append(None)
+		self._lastAddedPoint = None #holds previous point for covariance
+		self._previousMean = None #holds previous mean for covariance
 
 	#will update the mean, ivaraince, and i according to the welford equations.
 	def addData(self, data):
 		if self._debug:
 			print("Adding data point %f to welfordObject" % (data))
-		self._i = self._i+1
-		previousMean = self._mean #for use in variance equation
-		self._mean = previousMean + (data - previousMean)/float(self._i) #typecast self.i to float to ensure floating point division at all times
-		self._ivariance = self._ivariance + ((self._i-1)/float(self._i))*(data-previousMean)**2 #typecast self.i to ensure floating point division at all times.
+		#update number of points
+		self._i = self._i+1 
+
+		#update mean and variance
+		self._previousMean = self._mean #for use in covariance equation
+		self._mean = self._previousMean + (data - self._previousMean)/float(self._i) #typecast self.i to float to ensure floating point division at all times
+		self._ivariance = self._ivariance + ((self._i-1)/float(self._i))*(data-self._previousMean)**2 #typecast self.i to ensure floating point division at all times.
+
+		#update the last added point
+		self._lastAddedPoint = data
+		
+		#add data to laged list
+		self._laggedData[self._i%self._lag] = data
+
 		if self._debug:
 			print("Mean is now %f\niVariance is now %f\ni is now %i" % (self._mean, self._ivariance, self._i))
+
+	#returns the autocorrelation with k lag
+	def getAutoCorrelation(self):
+		if self._i < self._lag: #not enought data points to calculate auto correlation lag
+			print "Not enough data points to provide an autocorrelation with lag %i" % (self._lag)
+			return None
+		else:#autocorrelation can be calculated
+			sum = 0
+			startingPoint = ((self._i%self._lag+1) + 1)%self._lag #the starting point in circular array, ie if lag is 5 and there are 13 points, 3 was the last index added, so the oldest data is at 4
+		
 
 	#returns the variance, not the i*variance
 	def getVariance(self):
