@@ -1,6 +1,7 @@
 #All class variables are prefixed by a _, this to prevent them from being so eaisly modified by the programer without hopefully throwing some sort of flag. This is primarly because the programer should not need to change any values other than through a series of equations(aka the methods), but the options are available for easy access. 
 
-from __future__ import division
+from __future__ import division #so i don't need to type cast a ton of ints to floats
+import sys
 
 class Welford:
 	def __init__(self, lag):
@@ -10,8 +11,10 @@ class Welford:
 		self._debug = False #for debuging statements
 		self._lag = lag;
 		self._X = [] #list used for holding lagged entries, for auto correlation
-		for i in range(lag):
+		self._W = []
+		for i in range(lag): #pre allocate arrays, so all overhead is done during construction
 			self._X.append(None)
+			self._W.append(None)
 		self._lastAddedPoint = None #holds previous point for covariance
 		self._previousMean = None #holds previous mean for covariance
 
@@ -46,12 +49,24 @@ class Welford:
 	
 
 		if self._i > 1: #if there is a pair of correlation to calculate
-			if self._i < self._lag:
-				for j in range(0, i):
-					self._W[j] = self._W[j] + ((self._i-1)/self._1)*(self._lastAddedPoint - self._previousMean)(self._X[(self._i-j) %self._lag] -self._previousMean)
-			else:
+			if self._i <= self._lag: #if there are enough points to calculate autocorrelation, but not enough to fill up the list
+				for j in range(0, i-1):
+					if self._W[0] == None:
+						self._W[0] = 0
+					w = self._W[j]
+					u = data
+					v = self._X[self._i-j] 
+					vbar = self._previousMean
+					ubar = vbar
+					self._W[j] = w + ((self._i -1)/self._i)*(u-ubar)*(v-vbar) #see equation (A)
+			else: #enough points to fill up list
 				for j in range(0, self._lag):
-					self._W[j] = self._W[j] + ((self._i-1)/self._1)*(self._lastAddedPoint - self._previousMean)(self._X[(self._i-j) %self._lag] -self._previousMean)
+					w = self._W[j]
+					u = data
+					v = self._X[(self._i-j)%self._lag] 
+					vbar = self._previousMean
+					ubar = vbar
+					self._W[j] = w + ((self._i -1)/self._i)*(u-ubar)*(v-vbar) #see equation (A)
 		
 		#add data to laged list
 		self._X[self._i%self._lag] = data
@@ -59,6 +74,11 @@ class Welford:
 		if self._debug:
 			print("Mean is now %f\niVariance is now %f\ni is now %i" % (self._mean, self._ivariance, self._i))
 		
+
+	def getAutocorrelation(self, j):
+		j = (j+1)%self._lag #shift point, since rj of 0 is actually in index 1, and the rj or lag k is at index 0.
+		return self._W[j]/self._ivariance
+
 
 	#returns the variance, not the i*variance
 	def getVariance(self):
