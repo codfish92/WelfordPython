@@ -1,3 +1,6 @@
+#NOTE: THIS FUNCTION IS NOT FINISHED. PROGRESS HAS BEEN VERY SLOW...
+
+
 #All class variables are prefixed by a _, this to prevent them from being so eaisly modified by the programer without hopefully throwing some sort of flag. This is primarly because the programer should not need to change any values other than through a series of equations(aka the methods), but the options are available for easy access. 
 
 from __future__ import division #so i don't need to type cast a ton of ints to floats
